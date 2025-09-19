@@ -46,6 +46,9 @@ EXPOSE ${PORT:-8501}
 COPY startup.sh /app/startup.sh
 RUN chmod +x /app/startup.sh
 
+# 讓非 root 執行者可寫入 /app（HF Spaces 預設以非 root 身分啟動容器）
+RUN chmod -R a+rwX /app
+
 # 啟動 Streamlit（使用 shell 模式，讓 ${PORT:-8501} 可被展開）
 CMD ["/bin/bash", "/app/startup.sh"]
 
