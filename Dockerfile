@@ -23,16 +23,48 @@ ENV STREAMLIT_BROWSER_GATHERUSAGESTATS=false
 # 直接在映像內生成 requirements.txt（避免 HF Space 倉庫缺少檔案導致 COPY 失敗）
 RUN printf "streamlit==1.28.2\nrequests==2.31.0\npillow==10.0.1\npython-dotenv==1.0.0\n" > /app/requirements.txt
 
-# 使用本地 webui 原始碼（Space 倉庫中必須有 webui 目錄）
-COPY webui /app/webui
+# 生成最小可用的 webui 應用（避免 Space 倉庫缺少 webui 目錄導致 COPY 失敗）
+RUN mkdir -p /app/webui \
+ && cat > /app/webui/Main.py << 'PY'
+import streamlit as st
+import time
+
+st.set_page_config(page_title="MoneyPrinterTurbo 影片生成器", page_icon="🤖", layout="wide")
+st.title("🤖 MoneyPrinterTurbo 影片生成器")
+st.markdown("---")
+
+with st.container():
+    st.header("🎬 影片參數設定")
+    col1, col2 = st.columns(2)
+    with col1:
+        video_subject = st.text_input("📋 影片主題", placeholder="請輸入影片主題或關鍵詞")
+        video_language = st.selectbox("🌐 影片語言", ["中文", "English", "Auto Detect"]) 
+    with col2:
+        video_length = st.selectbox("⏱️ 影片長度", ["短 (30-60秒)", "中 (1-3分鐘)", "長 (3-5分鐘)"])
+        video_aspect = st.selectbox("📱 影片比例", ["9:16 豎屏", "16:9 橫屏", "1:1 方形"]) 
+
+st.markdown("---")
+
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    if st.button("🚀 開始生成影片", type="primary", use_container_width=True):
+        if not video_subject:
+            st.error("❌ 請先輸入影片主題！")
+        else:
+            with st.spinner("🎬 正在生成影片，請稍候..."):
+                progress_bar = st.progress(0)
+                for i in range(100):
+                    time.sleep(0.02)
+                    progress_bar.progress(i + 1)
+                st.success("✅ 影片生成完成！(Demo)")
+                st.info("這是示範版本，請於後續整合真實生成流程。")
+PY
 
 # 安裝 Python 相依套件
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # 手動補安裝 playwright 再下載瀏覽器
 RUN pip install --no-cache-dir playwright && playwright install chromium
-
-# 不預先下載 webui/.streamlit/config.toml，啟動時會在 /app/.streamlit 動態生成
 
 # 暴露連接埠（HF Spaces 會注入 PORT）
 EXPOSE ${PORT:-7860}
@@ -44,7 +76,7 @@ RUN chmod +x /app/startup.sh
 # 讓非 root 執行者可寫入 /app（HF Spaces 預設以非 root 身分啟動容器）
 RUN chmod -R a+rwX /app
 
-# 啟動 Streamlit（使用 shell 模式，讓 ${PORT:-7860} 可被展開）
+# 啟動 Streamlit
 CMD ["/bin/bash", "/app/startup.sh"]
 
-# cache-bust 2025-09-19-19-05
+# cache-bust 2025-09-19-19-12
