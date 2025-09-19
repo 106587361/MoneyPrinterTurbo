@@ -23,8 +23,9 @@ ENV STREAMLIT_BROWSER_GATHERUSAGESTATS=false
 # 改用本地 requirements.txt
 COPY requirements.txt /app/requirements.txt
 
-# 改用本地 webui 目錄（完整 UI）
-COPY webui /app/webui
+# 以壓縮檔方式攜帶 webui（Space Files 僅能上傳單檔時使用）。
+# Docker 的 ADD 會自動解開 tar.gz 到指定目錄。
+ADD webui.tar.gz /app/webui/
 
 # 安裝 Python 相依套件
 RUN pip install --no-cache-dir -r /app/requirements.txt
@@ -45,4 +46,4 @@ RUN chmod -R a+rwX /app
 # 啟動 Streamlit
 CMD ["/bin/bash", "/app/startup.sh"]
 
-# cache-bust 2025-09-20-03-25
+# cache-bust 2025-09-20-03-40
