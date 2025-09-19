@@ -20,17 +20,21 @@ WORKDIR /app
 ENV HOME=/app
 ENV STREAMLIT_BROWSER_GATHERUSAGESTATS=false
 
-# 改用本地 requirements.txt
-COPY requirements.txt /app/requirements.txt
+# 將本地 requirements 作為後備安裝清單（若上傳的完整專案內包含 requirements.txt，將優先使用該檔案）
+COPY requirements.txt /app/requirements-base.txt
 
-# 以壓縮檔方式攜帶 webui（Space Files 僅能上傳單檔時使用）。
-# Docker 的 ADD 會自動解開 tar.gz 到指定目錄。
-ADD webui.tar.gz /app/webui/
+# 以壓縮檔方式攜帶完整專案（請上傳 mpt_app.tar.gz 到 Space 根目錄）
+# Docker 的 ADD 會自動解開 tar.gz 到指定目錄 /app
+ADD mpt_app.tar.gz /app/
 
-# 安裝 Python 相依套件
-RUN pip install --no-cache-dir -r /app/requirements.txt
+# 安裝 Python 相依套件：若 /app/requirements.txt 存在則優先使用；否則使用本倉庫的後備清單
+RUN bash -lc 'if [ -f /app/requirements.txt ]; then \
+    echo "Using upstream /app/requirements.txt" && pip install --no-cache-dir -r /app/requirements.txt; \
+  else \
+    echo "Using fallback /app/requirements-base.txt" && pip install --no-cache-dir -r /app/requirements-base.txt; \
+  fi'
 
-# 手動補安裝 playwright 再下載瀏覽器
+# 手動補安裝 playwright 再下載瀏覽器（如無需可於上游 requirements 中移除）
 RUN pip install --no-cache-dir playwright && playwright install chromium
 
 # 暴露連接埠（HF Spaces 會注入 PORT）
@@ -43,7 +47,7 @@ RUN chmod +x /app/startup.sh
 # 讓非 root 執行者可寫入 /app（HF Spaces 預設以非 root 身分啟動容器）
 RUN chmod -R a+rwX /app
 
-# 啟動 Streamlit
+# 啟動（會在 startup.sh 中自動偵測入口並啟動對應 Web UI）
 CMD ["/bin/bash", "/app/startup.sh"]
 
-# cache-bust 2025-09-20-03-40
+# cache-bust 2025-09-20-04-05
