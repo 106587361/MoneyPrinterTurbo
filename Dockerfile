@@ -20,8 +20,10 @@ WORKDIR /app
 ENV HOME=/app
 ENV STREAMLIT_BROWSER_GATHERUSAGESTATS=false
 
-# 使用本地 requirements.txt 與本地 webui 原始碼
-COPY requirements.txt /app/requirements.txt
+# 直接在映像內生成 requirements.txt（避免 HF Space 倉庫缺少檔案導致 COPY 失敗）
+RUN printf "streamlit==1.28.2\nrequests==2.31.0\npillow==10.0.1\npython-dotenv==1.0.0\n" > /app/requirements.txt
+
+# 使用本地 webui 原始碼（Space 倉庫中必須有 webui 目錄）
 COPY webui /app/webui
 
 # 安裝 Python 相依套件
@@ -45,4 +47,4 @@ RUN chmod -R a+rwX /app
 # 啟動 Streamlit（使用 shell 模式，讓 ${PORT:-7860} 可被展開）
 CMD ["/bin/bash", "/app/startup.sh"]
 
-# cache-bust 2025-09-19-18-58
+# cache-bust 2025-09-19-19-05
