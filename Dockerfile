@@ -35,12 +35,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 手動補安裝 playwright 再下載瀏覽器
 RUN pip install --no-cache-dir playwright && playwright install chromium
 
-# 下載 config.toml（如存在）
-RUN curl -fsSL -o /app/webui/.streamlit/config.toml \
-    https://raw.githubusercontent.com/106587361/MoneyPrinterTurbo/main/webui/.streamlit/config.toml || true
+# 不預先下載 webui/.streamlit/config.toml，啟動時會在 /app/.streamlit 動態生成
 
 # 暴露連接埠（HF Spaces 會注入 PORT）
-EXPOSE ${PORT:-8501}
+EXPOSE ${PORT:-7860}
 
 # 複製啟動腳本
 COPY startup.sh /app/startup.sh

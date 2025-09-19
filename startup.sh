@@ -8,14 +8,19 @@ mkdir -p resource/images
 
 # 1. 生成 Streamlit 伺服器設定（.streamlit/config.toml）
 echo "寫入 .streamlit/config.toml (Streamlit 伺服器設定)..."
-mkdir -p ./webui/.streamlit
-cat > ./webui/.streamlit/config.toml << EOF
+mkdir -p ./.streamlit
+cat > ./.streamlit/config.toml << EOF
 [server]
 headless = true
 port = ${PORT:-7860}
 address = "0.0.0.0"
 # 在 HF 不需要 CORS，關掉可避免某些代理情況報錯
 enableCORS = false
+
+[browser]
+# 關閉遙測與用量收集，避免在容器根目錄 '/.streamlit' 嘗試寫入而觸發 Permission denied
+# 參考啟動時提示：To deactivate, set browser.gatherUsageStats to false
+#gatherUsageStats = false
 EOF
 
 # 2. 生成應用程式配置（專案根目錄 config.toml，供 MoneyPrinterTurbo 讀取）
@@ -48,6 +53,7 @@ EOL
 # 環境變數（提供給手動啟動或相容邏輯）
 export STREAMLIT_SERVER_PORT=${PORT:-7860}
 export STREAMLIT_SERVER_ADDRESS=0.0.0.0
+export STREAMLIT_BROWSER_GATHERUSAGESTATS=false
 
 # 3. 啟動 Streamlit 應用程式
 echo "啟動 MoneyPrinterTurbo...（請用你的 hf.space 公開網址開啟，不要用 0.0.0.0）"
