@@ -16,21 +16,16 @@ RUN sed -i '/<policy domain="path" rights="none" pattern="@\*"/d' \
 # 建立工作目錄
 WORKDIR /app
 
-# 下載 requirements.txt（如存在）
-RUN curl -fsSL -o requirements.txt https://raw.githubusercontent.com/106587361/MoneyPrinterTurbo/main/requirements.txt || true
+# 設定 HOME 並預設關閉 Streamlit usage stats，避免寫入到根目錄 /.streamlit
+ENV HOME=/app
+ENV STREAMLIT_BROWSER_GATHERUSAGESTATS=false
 
-# 用 git clone 取得 Streamlit 前端（純下載，不綁本機）
-RUN git clone --depth 1 https://github.com/106587361/MoneyPrinterTurbo.git /tmp/mp \
-    && mv /tmp/mp/webui ./webui \
-    && rm -rf /tmp/mp
-
-# 用 git clone 取得後端 API（可有可無，HF 不會報錯）
-RUN git clone --depth 1 https://github.com/106587361/MoneyPrinterTurbo.git /tmp/mp2 \
-    && mv /tmp/mp2/nutrition-api ./nutrition-api || true \
-    && rm -rf /tmp/mp2 || true
+# 使用本地 requirements.txt 與本地 webui 原始碼
+COPY requirements.txt /app/requirements.txt
+COPY webui /app/webui
 
 # 安裝 Python 相依套件
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # 手動補安裝 playwright 再下載瀏覽器
 RUN pip install --no-cache-dir playwright && playwright install chromium
@@ -47,7 +42,7 @@ RUN chmod +x /app/startup.sh
 # 讓非 root 執行者可寫入 /app（HF Spaces 預設以非 root 身分啟動容器）
 RUN chmod -R a+rwX /app
 
-# 啟動 Streamlit（使用 shell 模式，讓 ${PORT:-8501} 可被展開）
+# 啟動 Streamlit（使用 shell 模式，讓 ${PORT:-7860} 可被展開）
 CMD ["/bin/bash", "/app/startup.sh"]
 
-# cache-bust 2025-09-19-17-37
+# cache-bust 2025-09-19-18-58
