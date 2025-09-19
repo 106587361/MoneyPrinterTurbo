@@ -110,16 +110,10 @@ export STREAMLIT_SERVER_PORT=${PORT:-7860}
 export STREAMLIT_SERVER_ADDRESS=0.0.0.0
 export STREAMLIT_BROWSER_GATHERUSAGESTATS=false
 
-# 3. 啟動應用程式（自動偵測：優先 FastAPI/uvicorn，其次 Streamlit WebUI）
+# 3. 啟動應用程式（自動偵測：優先 Streamlit WebUI，其次 FastAPI/uvicorn）
 echo "啟動 MoneyPrinterTurbo...（請用你的 hf.space 公開網址開啟，不要用 0.0.0.0）"
 
-# 先偵測官方完整版本（FastAPI + Uvicorn）
-if [ -f "/app/app/asgi.py" ]; then
-  echo "偵測到官方完整版本（FastAPI/Uvicorn），使用 Uvicorn 啟動..."
-  exec uvicorn app.asgi:app --host 0.0.0.0 --port ${PORT:-7860} --log-level info
-fi
-
-# 否則退回到我們的 Streamlit WebUI（多入口自動偵測）
+# 先偵測 WebUI（Streamlit）
 ENTRY=""
 if [ -f "/app/webui/Main.py" ]; then
   ENTRY="/app/webui/Main.py"
@@ -131,12 +125,22 @@ elif [ -f "/app/app.py" ]; then
   ENTRY="/app/app.py"
 elif [ -f "/app/main.py" ]; then
   ENTRY="/app/main.py"
-else
-  echo "找不到常見的入口檔 (webui/Main.py, webui/main.py, webui/app.py, app.py, main.py)。列出 /app 與 /app/webui 供排查："
-  ls -la /app || true
-  ls -la /app/webui || true
-  echo "未能自動找到入口，請確認上傳的 mpt_app.tar.gz 內含 WebUI 或 FastAPI 入口檔。"
-  exit 1
 fi
 
-exec streamlit run "$ENTRY" --server.port=${STREAMLIT_SERVER_PORT} --server.address=${STREAMLIT_SERVER_ADDRESS} --server.headless true
+if [ -n "$ENTRY" ]; then
+  echo "偵測到 WebUI 入口（$ENTRY），使用 Streamlit 啟動..."
+  exec streamlit run "$ENTRY" --server.port=${STREAMLIT_SERVER_PORT} --server.address=${STREAMLIT_SERVER_ADDRESS} --server.headless true
+fi
+
+# 若無 WebUI，才偵測官方完整版本（FastAPI + Uvicorn）
+if [ -f "/app/app/asgi.py" ]; then
+  echo "未偵測到 WebUI，偵測到官方完整版本（FastAPI/Uvicorn），使用 Uvicorn 啟動..."
+  exec uvicorn app.asgi:app --host 0.0.0.0 --port ${PORT:-7860} --log-level info
+fi
+
+# 兩者皆無，輸出提示並退出
+echo "找不到 WebUI 或 FastAPI 入口。列出 /app 與 /app/webui 供排查："
+ls -la /app || true
+ls -la /app/webui || true
+echo "未能自動找到入口，請確認上傳的 mpt_app.tar.gz 內含 WebUI 或 FastAPI 入口檔。"
+exit 1
