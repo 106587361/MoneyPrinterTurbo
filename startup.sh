@@ -25,10 +25,31 @@ EOF
 
 # 2. 生成應用程式配置（專案根目錄 config.toml，供 MoneyPrinterTurbo 讀取）
 echo "寫入 專案配置 config.toml (應用層設定)..."
-cat > ./config.toml << 'EOL'
+
+# 以環境變數帶入預設值，並正規化布林值，避免 TOML 解析錯誤
+LLM_PROVIDER=${LLM_PROVIDER:-openai}
+SUBTITLE_PROVIDER=${SUBTITLE_PROVIDER:-edge}
+VIDEO_SOURCE=${VIDEO_SOURCE:-pexels}
+HIDE_CONFIG=${HIDE_CONFIG:-false}
+UI_HIDE_LOG=${UI_HIDE_LOG:-false}
+
+# 將多種真/假表示法轉成 TOML 需要的小寫 true/false
+_to_bool_lc() {
+  local v="${1}"
+  v="${v,,}"  # to lowercase
+  case "$v" in
+    1|true|yes|on) echo true ;;
+    0|false|no|off|"") echo false ;;
+    *) echo false ;;
+  esac
+}
+HIDE_CONFIG_TOML=$(_to_bool_lc "$HIDE_CONFIG")
+UI_HIDE_LOG_TOML=$(_to_bool_lc "$UI_HIDE_LOG")
+
+cat > ./config.toml <<EOL
 # 根層：模型與字幕設定
-llm_provider = "${LLM_PROVIDER:-openai}"
-subtitle_provider = "${SUBTITLE_PROVIDER:-edge}"  # edge 或 whisper
+llm_provider = "${LLM_PROVIDER}"
+subtitle_provider = "${SUBTITLE_PROVIDER}"  # edge 或 whisper
 
 # OpenAI / 相容 API
 openai_api_key = "${OPENAI_API_KEY}"
@@ -42,8 +63,8 @@ endpoint = "${ENDPOINT}"
 
 # 應用設定區塊
 [app]
-video_source = "${VIDEO_SOURCE:-pexels}"  # pexels 或 pixabay
-hide_config = ${HIDE_CONFIG:-false}
+video_source = "${VIDEO_SOURCE}"  # pexels 或 pixabay
+hide_config = ${HIDE_CONFIG_TOML}
 # 多把 Key 以逗號分隔；這裡自動將單一 Key 包裝成陣列
 pexels_api_keys = ["${PEXELS_API_KEY}"]
 pixabay_api_keys = ["${PIXABAY_API_KEY}"]
@@ -55,20 +76,7 @@ speech_region = "${AZURE_SPEECH_REGION}"
 
 # UI 區塊
 [ui]
-hide_log = ${UI_HIDE_LOG:-false}
-EOL
-
-# 語音合成（TTS）
-tts_provider = "${TTS_PROVIDER}"
-elevenlabs_api_key = "${ELEVENLABS_API_KEY}"
-elevenlabs_voice_id = "${ELEVENLABS_VOICE_ID}"
-azure_speech_key = "${AZURE_SPEECH_KEY}"
-azure_speech_region = "${AZURE_SPEECH_REGION}"
-
-# 儲存與影片參數
-storage_path = "storage"
-video_resolution = "vertical"   # vertical 或 horizontal
-subtitle_language = "zh-CN"
+hide_log = ${UI_HIDE_LOG_TOML}
 EOL
 
 # 環境變數（提供給手動啟動或相容邏輯）
