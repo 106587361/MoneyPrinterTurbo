@@ -7,8 +7,9 @@ mkdir -p resource/songs
 mkdir -p resource/images
 
 # 1. 動態生成 config.toml 檔案
-echo "正在生成 config.toml 設定檔..."
-cat > ./webui/config.toml << EOL
+echo "正在生成 config.toml 設定檔..." 
+mkdir -p ./webui/.streamlit
+cat > ./webui/.streamlit/config.toml << EOL
 [pexels]
 # Pexels API Key, 用於下載無版權影片素材
 api_key = "${PEXELS_API_KEY}"
