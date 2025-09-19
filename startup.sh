@@ -46,38 +46,64 @@ _to_bool_lc() {
 HIDE_CONFIG_TOML=$(_to_bool_lc "$HIDE_CONFIG")
 UI_HIDE_LOG_TOML=$(_to_bool_lc "$UI_HIDE_LOG")
 
+# 將字串轉成 TOML 單引號字面量可接受的形式：
+# 1) 刪除 CR 字元  2) 單引號 -> 兩個單引號
+_safe_toml_literal() {
+  local s="$1"
+  s="${s//$'\r'/}"
+  s="${s//\'/''}"
+  printf "%s" "$s"
+}
+
+# 為所有字串型設定預先做轉義
+LLM_PROVIDER_S=$(_safe_toml_literal "$LLM_PROVIDER")
+SUBTITLE_PROVIDER_S=$(_safe_toml_literal "$SUBTITLE_PROVIDER")
+OPENAI_API_KEY_S=$(_safe_toml_literal "$OPENAI_API_KEY")
+OPENAI_API_BASE_S=$(_safe_toml_literal "$OPENAI_API_BASE")
+GEMINI_API_KEY_S=$(_safe_toml_literal "$GEMINI_API_KEY")
+ENDPOINT_S=$(_safe_toml_literal "$ENDPOINT")
+VIDEO_SOURCE_S=$(_safe_toml_literal "$VIDEO_SOURCE")
+PEXELS_API_KEY_S=$(_safe_toml_literal "$PEXELS_API_KEY")
+PIXABAY_API_KEY_S=$(_safe_toml_literal "$PIXABAY_API_KEY")
+AZURE_SPEECH_KEY_S=$(_safe_toml_literal "$AZURE_SPEECH_KEY")
+AZURE_SPEECH_REGION_S=$(_safe_toml_literal "$AZURE_SPEECH_REGION")
+
 cat > ./config.toml <<EOL
 # 根層：模型與字幕設定
-llm_provider = '${LLM_PROVIDER}'
-subtitle_provider = '${SUBTITLE_PROVIDER}'  # edge 或 whisper
+llm_provider = '${LLM_PROVIDER_S}'
+subtitle_provider = '${SUBTITLE_PROVIDER_S}'  # edge 或 whisper
 
 # OpenAI / 相容 API
-openai_api_key = '${OPENAI_API_KEY}'
-openai_base_url = '${OPENAI_API_BASE}'
+openai_api_key = '${OPENAI_API_KEY_S}'
+openai_base_url = '${OPENAI_API_BASE_S}'
 
 # Gemini
-gemini_api_key = '${GEMINI_API_KEY}'
+gemini_api_key = '${GEMINI_API_KEY_S}'
 
 # 任務下載端點（可留空）
-endpoint = '${ENDPOINT}'
+endpoint = '${ENDPOINT_S}'
 
 # 應用設定區塊
 [app]
-video_source = '${VIDEO_SOURCE}'  # pexels 或 pixabay
+video_source = '${VIDEO_SOURCE_S}'  # pexels 或 pixabay
 hide_config = ${HIDE_CONFIG_TOML}
 # 多把 Key 以逗號分隔；這裡自動將單一 Key 包裝成陣列
-pexels_api_keys = ['${PEXELS_API_KEY}']
-pixabay_api_keys = ['${PIXABAY_API_KEY}']
+pexels_api_keys = ['${PEXELS_API_KEY_S}']
+pixabay_api_keys = ['${PIXABAY_API_KEY_S}']
 
 # Azure 語音（與官方範例一致的鍵名）
 [azure]
-speech_key = '${AZURE_SPEECH_KEY}'
-speech_region = '${AZURE_SPEECH_REGION}'
+speech_key = '${AZURE_SPEECH_KEY_S}'
+speech_region = '${AZURE_SPEECH_REGION_S}'
 
 # UI 區塊
 [ui]
 hide_log = ${UI_HIDE_LOG_TOML}
 EOL
+
+# 預覽前 80 行設定檔，方便除錯
+echo "--- /app/config.toml (preview first 80 lines) ---"
+head -n 80 ./config.toml || true
 
 # 環境變數（提供給手動啟動或相容邏輯）
 export STREAMLIT_SERVER_PORT=${PORT:-7860}
