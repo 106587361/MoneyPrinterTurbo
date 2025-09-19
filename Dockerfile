@@ -42,7 +42,11 @@ RUN curl -fsSL -o /app/webui/.streamlit/config.toml \
 # 暴露連接埠（HF Spaces 會注入 PORT）
 EXPOSE ${PORT:-8501}
 
+# 複製啟動腳本
+COPY startup.sh /app/startup.sh
+RUN chmod +x /app/startup.sh
+
 # 啟動 Streamlit（使用 shell 模式，讓 ${PORT:-8501} 可被展開）
-CMD streamlit run webui/Main.py --server.port=${PORT:-8501} --server.address=0.0.0.0
+CMD ["/bin/bash", "/app/startup.sh"]
 
 # cache-bust 2025-09-19-17-37
