@@ -13,14 +13,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN sed -i '/<policy domain="path" rights="none" pattern="@\*"/d' \
     /etc/ImageMagick-*/policy.xml || true
 
-# 複製 requirements.txt（如存在）
-COPY requirements.txt* ./
+# 建立工作目錄
+WORKDIR /app
 
-# 複製 Streamlit 前端
-COPY webui/ ./webui/
+# 下載 requirements.txt（如存在）
+RUN curl -fsSL -o requirements.txt https://raw.githubusercontent.com/106587361/MoneyPrinterTurbo/main/requirements.txt || true
 
-# 複製後端 API（如存在）
-COPY nutrition-api/ ./nutrition-api/ || true
+# 用 git clone 取得 Streamlit 前端（純下載，不綁本機）
+RUN git clone --depth 1 https://github.com/106587361/MoneyPrinterTurbo.git /tmp/mp \
+    && mv /tmp/mp/webui ./webui \
+    && rm -rf /tmp/mp
+
+# 用 git clone 取得後端 API（可有可無，HF 不會報錯）
+RUN git clone --depth 1 https://github.com/106587361/MoneyPrinterTurbo.git /tmp/mp2 \
+    && mv /tmp/mp2/nutrition-api ./nutrition-api || true \
+    && rm -rf /tmp/mp2 || true
 
 # 安裝 Python 相依套件
 RUN pip install --no-cache-dir -r requirements.txt
@@ -29,7 +36,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN playwright install chromium
 
 # 下載 config.toml（如存在）
-RUN curl -fsSL -o /webui/.streamlit/config.toml \
+RUN curl -fsSL -o /app/webui/.streamlit/config.toml \
     https://raw.githubusercontent.com/106587361/MoneyPrinterTurbo/main/webui/.streamlit/config.toml || true
 
 # 暴露連接埠（HF Spaces 會注入 PORT）
