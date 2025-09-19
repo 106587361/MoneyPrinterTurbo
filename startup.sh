@@ -6,58 +6,49 @@ mkdir -p resource/fonts
 mkdir -p resource/songs
 mkdir -p resource/images
 
-# 1. 動態生成 config.toml 檔案
-echo "正在生成 config.toml 設定檔..." 
+# 1. 生成 Streamlit 伺服器設定（.streamlit/config.toml）
+echo "寫入 .streamlit/config.toml (Streamlit 伺服器設定)..."
 mkdir -p ./webui/.streamlit
-cat > ./webui/.streamlit/config.toml << EOL
-[pexels]
-# Pexels API Key, 用於下載無版權影片素材
-api_key = "${PEXELS_API_KEY}"
+cat > ./webui/.streamlit/config.toml << EOF
+[server]
+headless = true
+port = ${PORT:-8501}
+address = "0.0.0.0"
+# 在 HF 不需要 CORS，關掉可避免某些代理情況報錯
+enableCORS = false
+EOF
 
-[openai]
-# OpenAI API Key, 用於生成影片文案
-api_key = "${OPENAI_API_KEY}"
-# 如果您使用代理或第三方 OpenAI 服務，請填寫 API Base URL
-api_base = "${OPENAI_API_BASE}"
+# 2. 生成應用程式配置（專案根目錄 config.toml，供 MoneyPrinterTurbo 讀取）
+echo "寫入 專案配置 config.toml (應用層設定)..."
+cat > ./config.toml << EOL
+# 注意：MoneyPrinterTurbo 的 README 指出需要配置 pexels_api_keys 與 llm_provider 等關鍵項 <mcreference link="https://github.com/106587361/MoneyPrinterTurbo" index="0">0</mcreference>
+pexels_api_keys = ["${PEXELS_API_KEY}"]
+llm_provider = "openai"
 
-[llm]
-# 可選 "openai" 或 "gemini"
-provider = "openai"
+# OpenAI / 第三方相容 API
+openai_api_key = "${OPENAI_API_KEY}"
+openai_api_base = "${OPENAI_API_BASE}"
 
-[gemini]
-# Google Gemini API Key
-api_key = "${GEMINI_API_KEY}"
+# Google Gemini
+gemini_api_key = "${GEMINI_API_KEY}"
 
-[tts]
-# 文字轉語音服務提供商, 可選 "openai", "elevenlabs"
-provider = "${TTS_PROVIDER}"
+# 語音合成（TTS）
+tts_provider = "${TTS_PROVIDER}"
+elevenlabs_api_key = "${ELEVENLABS_API_KEY}"
+elevenlabs_voice_id = "${ELEVENLABS_VOICE_ID}"
+azure_speech_key = "${AZURE_SPEECH_KEY}"
+azure_speech_region = "${AZURE_SPEECH_REGION}"
 
-[elevenlabs]
-# ElevenLabs API Key
-api_key = "${ELEVENLABS_API_KEY}"
-# ElevenLabs 聲音 ID
-voice_id = "${ELEVENLABS_VOICE_ID}"
-
-[azure]
-# Azure 語音服務金鑰與區域
-speech_key = "${AZURE_SPEECH_KEY}"
-speech_region = "${AZURE_SPEECH_REGION}"
-
-[storage]
-# 影片等檔案的儲存位置
+# 儲存與影片參數
 storage_path = "storage"
-
-[video]
-# 影片尺寸, horizontal (1920x1080) 或 vertical (1080x1920)
-resolution = "vertical"
-# 字幕語言, 例如 "zh-CN", "en-US"
+video_resolution = "vertical"   # vertical 或 horizontal
 subtitle_language = "zh-CN"
 EOL
 
-# 設置環境變數
+# 環境變數（提供給手動啟動或相容邏輯）
 export STREAMLIT_SERVER_PORT=${PORT:-8501}
 export STREAMLIT_SERVER_ADDRESS=0.0.0.0
 
-# 2. 啟動 Streamlit 應用程式
+# 3. 啟動 Streamlit 應用程式
 echo "啟動 MoneyPrinterTurbo..."
-streamlit run webui/Main.py --server.port=${STREAMLIT_SERVER_PORT} --server.address=${STREAMLIT_SERVER_ADDRESS} --server.headless true
+exec streamlit run webui/Main.py --server.port=${STREAMLIT_SERVER_PORT} --server.address=${STREAMLIT_SERVER_ADDRESS} --server.headless true
