@@ -1,40 +1,39 @@
-﻿# 使用精簡版 Python 基底映像
+# 使用官方 Python 3.10 slim 映像
 FROM python:3.10-slim
 
-# 常用環境變數與 pip 行為調整
-ENV PIP_NO_CACHE_DIR=1 \ 
-    PYTHONUNBUFFERED=1 \ 
-    PATH="/root/.local/bin:${PATH}" \ 
-    PYTHONPATH="${PYTHONPATH}:/root/.local/lib/python3.10/site-packages"
-
-# 安裝系統層級依賴  
+# 安裝系統相依套件（含 ImageMagick 7）
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git curl ffmpeg \
- && rm -rf /var/lib/apt/lists/*
+    git \
+    curl \
+    ffmpeg \
+    imagemagick \
+    && rm -rf /var/lib/apt/lists/*
 
-# 建立工作目錄
-WORKDIR /app
+# 不論 ImageMagick 6 或 7，找到 policy.xml 就刪除「@*」那一行
+RUN sed -i '/<policy domain="path" rights="none" pattern="@\*"/d' \
+    /etc/ImageMagick-*/policy.xml || true
 
-# 淺層 clone MoneyPrinterTurbo（加速建置）
-RUN git clone --depth=1 https://github.com/harry0703/MoneyPrinterTurbo.git /app/MoneyPrinterTurbo
+# 複製 requirements.txt（如存在）
+COPY requirements.txt* ./
 
-# 進入專案目錄
-WORKDIR /app/MoneyPrinterTurbo
+# 複製 Streamlit 前端
+COPY webui/ ./webui/
 
-# 升級 pip 並安裝 Python 依賴（含 playwright）
-RUN python -m pip install --upgrade pip \
- && pip install --no-cache-dir -r requirements.txt \
- && pip install --no-cache-dir playwright
+# 複製後端 API（如存在）
+COPY nutrition-api/ ./nutrition-api/ || true
 
-# 安裝 Playwright 瀏覽器與系統依賴
-RUN python -m playwright install --with-deps
+# 安裝 Python 相依套件
+RUN pip install --no-cache-dir -r requirements.txt
 
-# ===== 下載你的 config.toml =====
-ARG CONFIG_RAW_URL="https://raw.githubusercontent.com/106587361/config/main/config.toml"
-RUN curl -fSL "${CONFIG_RAW_URL}" -o ./config.toml
+# 安裝 Playwright 並下載瀏覽器
+RUN playwright install chromium
 
-# 對外開放 Streamlit 埠（本地 8501；雲端環境會帶入 $PORT）
-EXPOSE 8501
+# 下載 config.toml（如存在）
+RUN curl -fsSL -o /webui/.streamlit/config.toml \
+    https://raw.githubusercontent.com/106587361/MoneyPrinterTurbo/main/webui/.streamlit/config.toml || true
 
-# 啟動 Streamlit（相容 Hugging Face Spaces 的 $PORT）
-CMD ["sh","-lc","streamlit run ./webui/Main.py --server.address=0.0.0.0 --server.port=${PORT:-8501} --server.enableCORS=true --browser.gatherUsageStats=false"]
+# 暴露連接埠（HF Spaces 會注入 PORT）
+EXPOSE ${PORT:-8501}
+
+# 啟動 Streamlit
+CMD ["streamlit", "run", "webui/Main.py", "--server.port=${PORT:-8501}", "--server.address=0.0.0.0"]
