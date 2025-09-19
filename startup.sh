@@ -48,31 +48,31 @@ UI_HIDE_LOG_TOML=$(_to_bool_lc "$UI_HIDE_LOG")
 
 cat > ./config.toml <<EOL
 # 根層：模型與字幕設定
-llm_provider = "${LLM_PROVIDER}"
-subtitle_provider = "${SUBTITLE_PROVIDER}"  # edge 或 whisper
+llm_provider = '${LLM_PROVIDER}'
+subtitle_provider = '${SUBTITLE_PROVIDER}'  # edge 或 whisper
 
 # OpenAI / 相容 API
-openai_api_key = "${OPENAI_API_KEY}"
-openai_base_url = "${OPENAI_API_BASE}"
+openai_api_key = '${OPENAI_API_KEY}'
+openai_base_url = '${OPENAI_API_BASE}'
 
 # Gemini
-gemini_api_key = "${GEMINI_API_KEY}"
+gemini_api_key = '${GEMINI_API_KEY}'
 
 # 任務下載端點（可留空）
-endpoint = "${ENDPOINT}"
+endpoint = '${ENDPOINT}'
 
 # 應用設定區塊
 [app]
-video_source = "${VIDEO_SOURCE}"  # pexels 或 pixabay
+video_source = '${VIDEO_SOURCE}'  # pexels 或 pixabay
 hide_config = ${HIDE_CONFIG_TOML}
 # 多把 Key 以逗號分隔；這裡自動將單一 Key 包裝成陣列
-pexels_api_keys = ["${PEXELS_API_KEY}"]
-pixabay_api_keys = ["${PIXABAY_API_KEY}"]
+pexels_api_keys = ['${PEXELS_API_KEY}']
+pixabay_api_keys = ['${PIXABAY_API_KEY}']
 
 # Azure 語音（與官方範例一致的鍵名）
 [azure]
-speech_key = "${AZURE_SPEECH_KEY}"
-speech_region = "${AZURE_SPEECH_REGION}"
+speech_key = '${AZURE_SPEECH_KEY}'
+speech_region = '${AZURE_SPEECH_REGION}'
 
 # UI 區塊
 [ui]
