@@ -25,17 +25,38 @@ EOF
 
 # 2. 生成應用程式配置（專案根目錄 config.toml，供 MoneyPrinterTurbo 讀取）
 echo "寫入 專案配置 config.toml (應用層設定)..."
-cat > ./config.toml << EOL
-# 注意：MoneyPrinterTurbo 的 README 指出需要配置 pexels_api_keys 與 llm_provider 等關鍵項 <mcreference link="https://github.com/106587361/MoneyPrinterTurbo" index="0">0</mcreference>
-pexels_api_keys = ["${PEXELS_API_KEY}"]
-llm_provider = "openai"
+cat > ./config.toml << 'EOL'
+# 根層：模型與字幕設定
+llm_provider = "${LLM_PROVIDER:-openai}"
+subtitle_provider = "${SUBTITLE_PROVIDER:-edge}"  # edge 或 whisper
 
-# OpenAI / 第三方相容 API
+# OpenAI / 相容 API
 openai_api_key = "${OPENAI_API_KEY}"
-openai_api_base = "${OPENAI_API_BASE}"
+openai_base_url = "${OPENAI_API_BASE}"
 
-# Google Gemini
+# Gemini
 gemini_api_key = "${GEMINI_API_KEY}"
+
+# 任務下載端點（可留空）
+endpoint = "${ENDPOINT}"
+
+# 應用設定區塊
+[app]
+video_source = "${VIDEO_SOURCE:-pexels}"  # pexels 或 pixabay
+hide_config = ${HIDE_CONFIG:-false}
+# 多把 Key 以逗號分隔；這裡自動將單一 Key 包裝成陣列
+pexels_api_keys = ["${PEXELS_API_KEY}"]
+pixabay_api_keys = ["${PIXABAY_API_KEY}"]
+
+# Azure 語音（與官方範例一致的鍵名）
+[azure]
+speech_key = "${AZURE_SPEECH_KEY}"
+speech_region = "${AZURE_SPEECH_REGION}"
+
+# UI 區塊
+[ui]
+hide_log = ${UI_HIDE_LOG:-false}
+EOL
 
 # 語音合成（TTS）
 tts_provider = "${TTS_PROVIDER}"
