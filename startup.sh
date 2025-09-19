@@ -12,7 +12,7 @@ mkdir -p ./webui/.streamlit
 cat > ./webui/.streamlit/config.toml << EOF
 [server]
 headless = true
-port = ${PORT:-8501}
+port = ${PORT:-7860}
 address = "0.0.0.0"
 # 在 HF 不需要 CORS，關掉可避免某些代理情況報錯
 enableCORS = false
@@ -46,9 +46,9 @@ subtitle_language = "zh-CN"
 EOL
 
 # 環境變數（提供給手動啟動或相容邏輯）
-export STREAMLIT_SERVER_PORT=${PORT:-8501}
+export STREAMLIT_SERVER_PORT=${PORT:-7860}
 export STREAMLIT_SERVER_ADDRESS=0.0.0.0
 
 # 3. 啟動 Streamlit 應用程式
-echo "啟動 MoneyPrinterTurbo..."
+echo "啟動 MoneyPrinterTurbo...（請用你的 hf.space 公開網址開啟，不要用 0.0.0.0）"
 exec streamlit run webui/Main.py --server.port=${STREAMLIT_SERVER_PORT} --server.address=${STREAMLIT_SERVER_ADDRESS} --server.headless true
