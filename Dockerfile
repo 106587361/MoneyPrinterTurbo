@@ -32,8 +32,8 @@ RUN git clone --depth 1 https://github.com/106587361/MoneyPrinterTurbo.git /tmp/
 # 安裝 Python 相依套件
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 安裝 Playwright 並下載瀏覽器
-RUN playwright install chromium
+# 手動補安裝 playwright 再下載瀏覽器
+RUN pip install --no-cache-dir playwright && playwright install chromium
 
 # 下載 config.toml（如存在）
 RUN curl -fsSL -o /app/webui/.streamlit/config.toml \
@@ -42,7 +42,7 @@ RUN curl -fsSL -o /app/webui/.streamlit/config.toml \
 # 暴露連接埠（HF Spaces 會注入 PORT）
 EXPOSE ${PORT:-8501}
 
-# 啟動 Streamlit
-CMD ["streamlit", "run", "webui/Main.py", "--server.port=${PORT:-8501}", "--server.address=0.0.0.0"]
+# 啟動 Streamlit（使用 shell 模式，讓 ${PORT:-8501} 可被展開）
+CMD streamlit run webui/Main.py --server.port=${PORT:-8501} --server.address=0.0.0.0
 
-# cache-bust 2025-09-19-17-35
+# cache-bust 2025-09-19-17-37
